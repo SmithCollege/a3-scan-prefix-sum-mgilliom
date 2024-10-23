@@ -14,6 +14,7 @@ __global__ void k1(int *in, int *k1out) {
 	for (int i = gindex*100+1; i <= (gindex*100 + 99); i++){ //ea thread deals w 100 items
 		k1out[i]=k1out[i-1]+in[i];
 	}	
+	
 }
 
 __global__ void k3(int *k1out, int *k2out, int *k3out) {
@@ -35,8 +36,9 @@ __global__ void k3(int *k1out, int *k2out, int *k3out) {
 
 __global__ void k2(int *k1out, int *k2out) {
 	k2out[0] = k1out[99];
-	for (int i = 1; i < N / 100+1; i++){
+	for (int i = 1; i < N / 100; i++){
 		k2out[i] = k2out[i-1] + k1out[i*100+99];
+		//printf("%d. %d %d \n", i, k2out[i-1], k1out[i*100+99]);
 	}
 }
 
@@ -73,30 +75,32 @@ int main(void)
 	//int numBlocks = (N + BLOCKSIZE - 1) / BLOCKSIZE;
 	int numThreads = N / ITEMS_PER_THREAD;
 	int numBlocks = ceil(1.0 * numThreads / BLOCKSIZE);
-	printf("num threads %d, numBlocks %d", numThreads, numBlocks);
+	//printf("num threads %d, numBlocks %d", numThreads, numBlocks);
 	
 	double t0 = get_clock();
 	k1<<<numBlocks, BLOCKSIZE>>>(in, k1out);
-	printf("%s\n", cudaGetErrorString(cudaGetLastError()));
+	//printf("%s\n", cudaGetErrorString(cudaGetLastError()));
 	k2<<<1, 1>>>(k1out, k2out);
-	printf("%s\n", cudaGetErrorString(cudaGetLastError()));
+	//printf("%s\n", cudaGetErrorString(cudaGetLastError()));
 	k3<<<numBlocks, BLOCKSIZE>>>(k1out, k2out, k3out);
-	printf("%s\n", cudaGetErrorString(cudaGetLastError()));
+	//printf("%s\n", cudaGetErrorString(cudaGetLastError()));
   
 	  // Wait for GPU to finish before accessing on host
 	cudaDeviceSynchronize();
 	double t1 = get_clock();
 	printf("time: %f s\n", (t1-t0));
 
-
+	#if 0
 	for (int i = 99; i < N; i+=1000){
 	  printf("%d. %d\n",i, k1out[i]);
   	}
-  	#if 0
+  //	#endif
+  	
   	for (int i = 0; i < numThreads; i++){
 	  printf("%d. %d\n",i, k2out[i]);
   	}
-
+  	//#endif
+//	#if 0
   	for (int i = 0; i < N; i+=1000){
 	  printf("%d. %d\n",i, k3out[i]);
   	}

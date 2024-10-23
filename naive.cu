@@ -3,7 +3,7 @@
 #include <sys/time.h>
 // Kernel function to add the elements of two arrays
 
-#define N 400000
+#define N 100000
 #define BLOCKSIZE 256
 __global__ void scan(int *in, int *out) {
 
@@ -48,13 +48,13 @@ int main(void)
   // Run kernel on the GPU
 	int numBlocks = (N + BLOCKSIZE - 1) / BLOCKSIZE;
 
-	int t0 = get_clock();
+	double t0 = get_clock();
 	scan<<<numBlocks, BLOCKSIZE>>>(in, out);
   
 	  // Wait for GPU to finish before accessing on host
 	cudaDeviceSynchronize();
-	int t1 = get_clock();
-	printf("time: %f s\n", 1000000000*(t1-t0));
+	double t1 = get_clock();
+	printf("time: %f s\n", (t1-t0));
 	  
 	//for (int i = 0; i < N; i++){
 	  //printf("%d. %d\n",i, out[i]);
