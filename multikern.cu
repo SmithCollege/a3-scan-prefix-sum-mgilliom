@@ -20,14 +20,14 @@ __global__ void k1(int *in, int *k1out) {
 __global__ void k3(int *k1out, int *k2out, int *k3out) {
 
 	int gindex = threadIdx.x + blockIdx.x*blockDim.x;
-	if (threadIdx.x > 0){
+	if (gindex > 0){
 		for (int i = gindex*100; i <= (gindex*100 + 99); i++){ //ea thread deals w 100 items
 			k3out[i]=k1out[i]+k2out[gindex-1];
 		}	
 	}
 	else{
 		for (int i = 0; i <= 99; i++){
-			k1out[i]=k3out[i];
+			k3out[i]=k1out[i];
 		}
 	}
 }
@@ -38,7 +38,7 @@ __global__ void k2(int *k1out, int *k2out) {
 	k2out[0] = k1out[99];
 	for (int i = 1; i < N / 100; i++){
 		k2out[i] = k2out[i-1] + k1out[i*100+99];
-		//printf("%d. %d %d \n", i, k2out[i-1], k1out[i*100+99]);
+		//printf("%d. %d \n", i, k2out[i]);
 	}
 }
 
@@ -62,7 +62,7 @@ int main(void)
   // Allocate Unified Memory – accessible from CPU or GPU
 	cudaMallocManaged(&in, N*sizeof(int));
   	cudaMallocManaged(&k1out, N*sizeof(int));
-  	cudaMallocManaged(&k2out, N/ITEMS_PER_THREAD+1);
+  	cudaMallocManaged(&k2out, N / ITEMS_PER_THREAD+1);
   	cudaMallocManaged(&k3out, N*sizeof(int));
 
   // initialize x and y arrays on the host
@@ -79,10 +79,10 @@ int main(void)
 	
 	double t0 = get_clock();
 	k1<<<numBlocks, BLOCKSIZE>>>(in, k1out);
-	//printf("%s\n", cudaGetErrorString(cudaGetLastError()));
+	printf("%s\n", cudaGetErrorString(cudaGetLastError()));
 	k2<<<1, 1>>>(k1out, k2out);
-	//printf("%s\n", cudaGetErrorString(cudaGetLastError()));
-	k3<<<numBlocks, BLOCKSIZE>>>(k1out, k2out, k3out);
+	printf("%s\n", cudaGetErrorString(cudaGetLastError()));
+//	k3<<<numBlocks, BLOCKSIZE>>>(k1out, k2out, k3out);
 	//printf("%s\n", cudaGetErrorString(cudaGetLastError()));
   
 	  // Wait for GPU to finish before accessing on host
@@ -94,13 +94,15 @@ int main(void)
 	for (int i = 99; i < N; i+=1000){
 	  printf("%d. %d\n",i, k1out[i]);
   	}
-  //	#endif
-  	
+  	#endif
+
+  	printf("=======================");
   	for (int i = 0; i < numThreads; i++){
 	  printf("%d. %d\n",i, k2out[i]);
   	}
   	//#endif
-//	#if 0
+
+	#if 0
   	for (int i = 0; i < N; i+=1000){
 	  printf("%d. %d\n",i, k3out[i]);
   	}
